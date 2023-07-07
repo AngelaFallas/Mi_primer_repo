@@ -8,9 +8,87 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
+library(writexl)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(janitor)
+library(lubridate)
 ```
+
+a. Cree un archivo Rmarkdown para resolver esta práctica programada. En el chunk de setup cargue las
+librerías que considere necesarias para resolver la práctica. Los datos para trabajar puede cargarlos con
+la función read_csv2 de readr directamente de la siguiente dirección: “https://raw.githubusercontent.
+com/isa229/programacion_analisis_datos_ii/main/netflix_info.csv”
 
 ```{r}
-datos_netflix <- read_csv2("datos_netflix.csv",  sep = ";")
+datos_netflix <- read_csv2("https://raw.githubusercontent.com/isa229/programacion_analisis_datos_ii/main/netflix_info.csv")
+
 ```
 
+b. Ajuste los nombres de las columnas para que estén en español.
+
+```{r}
+datos_netflix <- rename(datos_netflix, "ID_Programa" = "show_id", "Tipo" = "type", "Titulo" = "title", "Director" = "director", "Pais" =  "country", "Fecha_agregado" = "date_added", "Anyo_lanzamiento" = "release_year", "Clasificacio" = "rating", "Duracion" = "duration", "Directorio" = "listed_in")
+```
+
+c. Elimine filas duplicadas.
+
+```{r}
+filas_dup <- datos_netflix |> 
+  janitor::get_dupes()
+
+filas_dist_dup <- filas_dup |> 
+  distinct()
+
+datos_netflix_limpio <- datos_netflix |> 
+  distinct()
+
+```
+
+d. Elimine filas y columnas vacías.
+
+```{r}
+datos_netflix_sinvacios <- datos_netflix_limpio |> 
+  remove_empty(which =c("rows", "cols"))
+
+datos_netflix <- datos_netflix_sinvacios
+```
+
+e. Elimine la variable correspondiente al año de lanzamiento (release_year.)
+
+```{r}
+
+```
+
+f. Haga una inspección de las variables type y country para determinar si hay observaciones mal escritas o
+escritas de diferentes maneras. Si es ahí, haga la limpieza para poder homogenizar esos datos.
+
+```{r}
+
+```
+
+g. Para todas las columnas de tipo carácter, en donde haya NA, coloque “Sin información”.
+
+```{r}
+
+```
+
+h. Añada a su conjunto de datos una nueva columna llamada anyo que indique el año en que el show o
+película fue añadido a Netflix. Añada también una columna llamada mes que indique el mes en que el
+show o película fue añadido a Netflix.
+
+```{r}
+
+```
+
+
+i. Cuántas películas y shows de TV hay por país? (4pts)
+
+j. Cuáles son los 10 directores con mayor cantidad de películas (sin contar shows de TV) en Netflix?
+Ordénelos por orden descendente.
+
+k. Cuáles son los 10 directores con mayor cantidad de shows de TV (sin contar películas) en Netflix?
+Ordénelos por orden descendente.
+
+l. Obtenga la lista de películas y shows de TV que se añadieron en marzo del año 2020. Cuántos fueron?
