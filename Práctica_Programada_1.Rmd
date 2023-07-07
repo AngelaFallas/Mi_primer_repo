@@ -1,0 +1,16 @@
+---
+title: "Práctica_programada_1"
+author: "Ángela Fallas Céspedes"
+date: "2023-07-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+```
+
+```{r}
+datos_netflix <- read_csv2("datos_netflix.csv",  sep = ";")
+```
+
