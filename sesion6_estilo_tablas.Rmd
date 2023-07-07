@@ -241,14 +241,33 @@ datos_calidad_aire <- datasets::airquality
 
 b. Obtenga un cuadro con los 10 registros con las temperaturas reportadas más altas
 ```{r}
-
+df_calidad_aire <- datos_calidad_aire |> 
+  arrange(desc(Temp)) |> 
+  head(10) 
+)
 ```
 
 c. Agregue títulos, subtítulos, fuente y pie de tabla al cuadro obtenido. Recuerde
 usar ?airquality para obtener información sobre el origen de los datos.
 
+```{r}
+df_cal_aire_gt <- df_calidad_aire |> 
+  gt()
+df_cal_aire_gt 
+```
+
 d. Además, agrupelas columnas Ozone, Solar.R y Wind bajo un tab_spanner llamada "Mediciones", 
 y las columnas Temp, Month y Day bajo un tab_spanner llamado "Tiempo".
+
+```{r}
+df_cal_aire_gt <- datos_calidad_aire |> 
+  gt() |> 
+   tab_header(
+    title = "Calidad del aire"
+    )
+    
+    
+```
 
 e. Renombre las columnas para que estén en español y coloque colores a su gusto a 
 la columna Temperatura.
