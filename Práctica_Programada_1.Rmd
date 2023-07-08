@@ -8,9 +8,171 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
+library(writexl)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(janitor)
+library(lubridate)
+library(stringr)
+library(tibble)
 ```
+
+a. Cree un archivo Rmarkdown para resolver esta práctica programada. En el chunk de setup cargue las
+librerías que considere necesarias para resolver la práctica. Los datos para trabajar puede cargarlos con
+la función read_csv2 de readr directamente de la siguiente dirección: “https://raw.githubusercontent.
+com/isa229/programacion_analisis_datos_ii/main/netflix_info.csv”
 
 ```{r}
-datos_netflix <- read_csv2("datos_netflix.csv",  sep = ";")
+datos_netflix <- read_csv2("https://raw.githubusercontent.com/isa229/programacion_analisis_datos_ii/main/netflix_info.csv")
+
 ```
 
+b. Ajuste los nombres de las columnas para que estén en español.
+
+```{r}
+datos_netflix <- rename(datos_netflix, "ID_Programa" = "show_id", "Tipo" = "type", "Titulo" = "title", "Director" = "director", "Pais" =  "country", "Fecha_agregado" = "date_added", "Anyo_lanzamiento" = "release_year", "Clasificacion" = "rating", "Duracion" = "duration", "Directorio" = "listed_in")
+```
+
+c. Elimine filas duplicadas.
+
+```{r}
+filas_dup <- datos_netflix |> 
+  janitor::get_dupes()
+
+filas_dist_dup <- filas_dup |> 
+  distinct()
+
+datos_netflix_limpio <- datos_netflix |> 
+  distinct()
+
+```
+
+d. Elimine filas y columnas vacías.
+
+```{r}
+datos_netflix_sinvacios <- datos_netflix_limpio |> 
+  remove_empty(which =c("rows", "cols"))
+
+```
+
+e. Elimine la variable correspondiente al año de lanzamiento (release_year.)
+
+```{r}
+datos_netflix_anyo <- head(datos_netflix_sinvacios$Anyo_lanzamiento)
+
+datos_netflix_sinvacios$Anyo_lanzamiento <- NULL
+```
+
+f. Haga una inspección de las variables type y country para determinar si hay observaciones mal escritas o
+escritas de diferentes maneras. Si es así, haga la limpieza para poder homogenizar esos datos.
+
+```{r}
+datos_netflix_sinvacios |> 
+  distinct(Pais)
+
+datos_netflix_sinvacios |> 
+  distinct(Tipo)
+
+datos_netflix_sinvacios |>
+  mutate("movie" = "Movie", "Movi" = "Movie", "tv show" = "TV Show")
+
+datos_netflix_sinvacios$Tipo[datos_netflix_sinvacios$Tipo == "Movi"] <- "Movie"
+datos_netflix_sinvacios$Tipo[datos_netflix_sinvacios$Tipo == "movie"] <- "Movie"
+datos_netflix_sinvacios$Tipo[datos_netflix_sinvacios$Tipo == "tv show"] <- "TV Show"
+
+datos_netflix_sinvacios$Pais <- str_to_title(datos_netflix_sinvacios$Pais)
+```
+
+g. Para todas las columnas de tipo carácter, en donde haya NA, coloque “Sin información”.
+
+```{r}
+datos_netflix_sin_na<- datos_netflix_sinvacios |> 
+  mutate(across(where(is.character), function(x) ifelse(is.na(x), "Sin informacion", x)))
+
+```
+
+h. Añada a su conjunto de datos una nueva columna llamada anyo que indique el año en que el show o
+película fue añadido a Netflix. Añada también una columna llamada mes que indique el mes en que el
+show o película fue añadido a Netflix.
+
+```{r}
+datos_netflix_sin_na <- datos_netflix_sin_na |> 
+  cbind(datos_netflix_anyo)
+
+datos_netflix_sin_na <- rename(datos_netflix_sin_na, "Anyo" = "datos_netflix_anyo")
+```
+
+
+i. Cuántas películas y shows de TV hay por país? (4pts)
+
+```{r}
+datos_pelis_programs <- datos_netflix_sin_na |> 
+  group_by(Pais) |> 
+  count(Tipo)
+```
+
+
+j. Cuáles son los 10 directores con mayor cantidad de películas (sin contar shows de TV) en Netflix?
+Ordénelos por orden descendente.
+
+```{r}
+directores_peliculas <- datos_netflix_sin_na |> 
+  group_by(Director) |> 
+  filter(Tipo =="Movie") |> 
+  count() |> 
+  arrange(desc(n))
+```
+
+Los 10 directores con la mayor cantidad de películas son:
+ 1 Rajiv Chilaka
+ 2 Ra\x9cl Campos, Jan Suter 
+ 3 Suhas Kadav
+ 4 Marcus Raboy
+ 5 Jay Karas
+ 6 Cathy Garcia-Molina
+ 7 Jay Chapman
+ 8 Martin Scorsese
+ 9 Youssef Chahine
+ 10 Steven Spielberg
+ 
+k. Cuáles son los 10 directores con mayor cantidad de shows de TV (sin contar películas) en Netflix?
+Ordénelos por orden descendente.
+
+```{r}
+directores_tv_shows <- datos_netflix_sin_na |> 
+  group_by(Director) |> 
+  filter(Tipo =="TV Show") |> 
+  count() |> 
+  arrange(desc(n))
+```
+
+Los 10 directores con la mayor cantidad de TV Shows son:
+
+1 Alastair Fothergill
+2 Mark Thornton, Todd Kauffman
+3 Stan Lathan
+4 Hsu Fu-chun
+5 Iginio Straffi
+6 Ken Burns
+7 Rob Seidenglanz
+8 Shin Won-ho
+9 Adrien Lagier, Ousmane Ly
+10 Adri�n Garc�a Bogliano
+
+l. Obtenga la lista de películas y shows de TV que se añadieron en marzo del año 2020. Cuántos fueron?
+
+```{r}
+datos_netflix_sin_na_fecha <- datos_netflix_sin_na |> 
+  mutate(Fecha_agregado = mdy(Fecha_agregado))
+
+datos_netflix_sin_na_fecha
+
+datos_marzo_2020 <- datos_netflix_sin_na_fecha[datos_netflix_sin_na_fecha$Fecha_agregado >= "2020-03-01" & datos_netflix_sin_na_fecha$Fecha_agregado <= "2020-03-31", ] |> 
+  select(Titulo)
+
+
+
+```
+
+Durante marzo del 2020 se agregaron 137 películas y TV Shows.
