@@ -1,0 +1,74 @@
+---
+title: "Practica_programada_2"
+author: "Ángela Fallas Céspedes"
+date: "2023-07-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(writexl)
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(janitor)
+library(lubridate)
+library(stringr)
+library(tibble)
+library(gt)
+```
+
+
+```{r include=FALSE}
+air_quality <- read_csv("https://raw.githubusercontent.com/isa229/programacion_analisis_datos_ii/main/air_quality_index.csv")
+```
+b. Cuántas categorías diferentes de AQI (AQI Category) hay en este conjunto de datos? Cuáles son?
+(2pts)
+
+En AQI (AQI Catgeory) hay seis categorias diferentes en el conjunto de datos air_quality, las cuales son:
+
+- Moderate
+- Good
+- Unhealthy
+- Very unhealthy
+- Unhealthy for Sensitive Groups
+- Hazardous
+
+
+```{r include=FALSE}
+air_quality |> 
+  distinct(air_quality$`AQI Category`) 
+```
+
+c. Cree una tabla que indique la cantidad de ciudades que hay en cada categoría de AQI (AQI Category).
+Adicionalmente, traduzca las categorías a español, por ejemplo “Good” sería “Bueno”. Presente esta
+tabla con el paquete gt, añadiendo títulos y subtítulos (10pts).
+```{r include=FALSE}
+df_aq <- tibble(
+  Categorias = (air_quality$`AQI Category`),
+  Ciudades = air_quality$City)
+
+tabla_1 <- df_aq |>  
+  mutate(Ciudades = nrown(Ciudades)) |> 
+  head(6) |> 
+  mutate(Categorias = c("Moderado", "Bueno", "Insalubre", "Muy Insalubre", "Insalubre para grupos sensibles", "Peligroso")) 
+```
+
+d. Obtenga el promedio del AQI Value por país, y cree 2 tablas: Una que muestre los 10 países con los
+valores más bajos de AQI, y otra que muestre los 10 países con los valores más altos de AQI. Presente
+estas tablas con el paquete gt, añadiendo títulos y subtítulos (10pts)
+```{r include=FALSE}
+
+```
+
+e. Para los 10 países con los valores promedios más altos de AQI, muestrelos en un mapa de leaflet usando
+addMarkers o un addCircles. En el popup debe colocar el valor promedio del AQI. (6pts)
+```{r include=FALSE}
+
+```
+
+f. Escriba el código que exporte los datos en un excel, de tal manera que cada pestaña tenga solamente
+los datos de una categoría de AQI. (Es decir una pestaña para las ciudades cuya categoría es “Good”
+o “Buena”, otra para los que la categoría es “Moderate” y así para cada cateoría). (5pts)
+
