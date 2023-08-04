@@ -17,6 +17,7 @@ library(lubridate)
 library(stringr)
 library(tibble)
 library(gt)
+library(leaflet)
 ```
 
 
@@ -45,30 +46,85 @@ c. Cree una tabla que indique la cantidad de ciudades que hay en cada categoría
 Adicionalmente, traduzca las categorías a español, por ejemplo “Good” sería “Bueno”. Presente esta
 tabla con el paquete gt, añadiendo títulos y subtítulos (10pts).
 ```{r include=FALSE}
-df_aq <- tibble(
-  Categorias = (air_quality$`AQI Category`),
-  Ciudades = air_quality$City)
+df_new <- as.data.frame(table(air_quality$`AQI Category`))
 
-tabla_1 <- df_aq |>  
-  mutate(Ciudades = nrown(Ciudades)) |> 
+df_new <- tibble(
+  Categorias = df_new$Var1,
+  Ciudades = df_new$Freq
+)
+
+tabla_1 <- df_new |> 
   head(6) |> 
-  mutate(Categorias = c("Moderado", "Bueno", "Insalubre", "Muy Insalubre", "Insalubre para grupos sensibles", "Peligroso")) 
+  mutate(Categorias = c("Bueno", "Peligroso", "Moderado", "Insalubre", "Insalubre para grupos sensibles", "Muy insalubre"))
+
+
+tabla_gt <- tabla_1 |> 
+  gt() |> 
+  tab_header(
+    title = "Cantidad de ciudades según la calidad del aire", 
+    subtitle = "Ciudades de todo el mundo"
+  )
+
+tabla_gt
+
 ```
 
 d. Obtenga el promedio del AQI Value por país, y cree 2 tablas: Una que muestre los 10 países con los
 valores más bajos de AQI, y otra que muestre los 10 países con los valores más altos de AQI. Presente
 estas tablas con el paquete gt, añadiendo títulos y subtítulos (10pts)
 ```{r include=FALSE}
+promedio_aqi <- air_quality |> 
+  group_by(Country) |> 
+  summarise(promedio_aqi_value = mean(`AQI Value`))
 
+top_10_max <- promedio_aqi |> 
+  top_n(10, promedio_aqi$promedio_aqi_value)
+
+top_10_min <- promedio_aqi |> 
+  arrange(promedio_aqi_value) |> 
+  head(10)
 ```
 
 e. Para los 10 países con los valores promedios más altos de AQI, muestrelos en un mapa de leaflet usando
 addMarkers o un addCircles. En el popup debe colocar el valor promedio del AQI. (6pts)
 ```{r include=FALSE}
+mapa_top_max <- top_10_max |> 
+  leaflet() |> 
+  addTiles() |> 
+  addMarkers(lng = -69.968338, lat = 2.52111, popup = "163.0000") |> 
+  addMarkers(lng = 50.637772, lat = 25.930414, popup = "188.0000") |> 
+  addMarkers(lng = 47.481766, lat = 29.31166, popup = "161.0000") |> 
+  addMarkers(lng = -10.940835, lat = 21.00789, popup = "164.0000") |> 
+  addMarkers(lng = 55.923255, lat = 21.512583, popup = "155.0000") |> 
+  addMarkers(lng = 69.345116, lat = 30.375321, popup = "184.2000") |> 
+  addMarkers(lng = 51.183884, lat = 25.354826, popup = "164.0000") |> 
+  addMarkers(lng = 127.766922, lat = 35.907757, popup = "421.0000") |> 
+  addMarkers(lng = 45.079162, lat = 23.885942, popup = "168.0000") |> 
+  addMarkers(lng = 53.847818, lat = 23.424076, popup = "163.6667")
 
+mapa_top_max
 ```
 
 f. Escriba el código que exporte los datos en un excel, de tal manera que cada pestaña tenga solamente
 los datos de una categoría de AQI. (Es decir una pestaña para las ciudades cuya categoría es “Good”
 o “Buena”, otra para los que la categoría es “Moderate” y así para cada cateoría). (5pts)
+```{r}
+good <- subset(air_quality, `AQI Category` == "Good") |> 
+  distinct(City)
+moderate <- subset(air_quality, `AQI Category` == "Moderate")|> 
+  distinct(City)
+unhealthy <- subset(air_quality, `AQI Category` == "Unhealthy") |> 
+  distinct(City)
+very_unhealthy <- subset(air_quality, `AQI Category` == "Very Unhealthy")|> 
+  distinct(City)
+unhealthy_sensitive_groups<- subset(air_quality, `AQI Category` == "Unhealthy for Sensitive Groups")|> 
+  distinct(City)
+hazardous <- subset(air_quality, `AQI Category` == "Hazardous")|> 
+  distinct(City)
+
+datos_calidad_aire_ciudades <- list("Bueno" = good, "Moderado" = moderate, "Insalubre" = unhealthy, "Muy Insalubre" = very_unhealthy, "Insalubre para grupos sensibles" = unhealthy_sensitive_groups, "Peligroso" = hazardous)
+
+write_xlsx(datos_calidad_aire_ciudades, path = "datos/datos_calidad_aire_ciudades.xlsx")
+
+```
 
