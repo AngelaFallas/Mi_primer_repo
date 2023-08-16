@@ -1,0 +1,313 @@
+---
+title: "sesion11_intro_shiny"
+author: "Kimberley Isabel Orozco Cornejo"
+date: "2023-07-30"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(shiny)
+```
+
+## Introducción a shiny
+
+Shiny es un paquete en R que permite crear aplicaciones web interactivas
+a con el lenguage de programación R. Sin la necesidad de tener
+conocimientos profundos de HTML, CSS, o JavaScript, shiny nos permite convertir
+nuestros análisis de R en una aplicación web interactiva, expandiendo
+nuestras posibilidades.
+
+Una app de shiny tiene al menos 2 componentes:
+
+-   El ui.
+-   El server.
+
+El ui de una app de shiny es donde definimos cuál es la interfaz gráfica
+de nuestra aplicación. Por detrás, el UI lo que hace es tomar los
+comandos de R que le proporcionamos, y generar un código html que define
+la estructura visible (página web) de nuestra app.
+
+Por su parte, el server se contiene el código de R que define el
+comportamiento de nuestra aplicación.
+
+Vamos a crear la app mínima (el esqueleto) de una aplicación de shiny.
+Para ello, cree un archivo llamado app.R y coloque el siguiente código:
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  "Hola, mundo!"
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+¡Esta es una aplicación Shiny completa, aunque sencilla! Mirando de
+cerca el código anterior, nuestra app.R hace cuatro cosas:
+
+-   Llama a la biblioteca (shiny) para cargar el paquete.
+
+-   Define la interfaz de usuario (el ui), la página web HTML con la que
+    interactúan los usuarios. En este caso, es una página que contiene
+    las palabras "¡Hola, mundo!".
+
+-   Especifica el comportamiento de nuestra aplicación definiendo una
+    función server. Actualmente está vacío, por lo que nuestra
+    aplicación no hace nada, pero volveremos a revisar esto en breve.
+
+-   Ejecuta shinyApp (ui, servidor) para construir e iniciar una
+    aplicación Shiny desde la interfaz de usuario y el servidor.
+
+## Iniciar o parar nuestra app
+
+Antes de cerrar la aplicación, vuelva a RStudio y mire la consola R.
+Notarás que dice algo como:
+
+#\> Listening in <http://127.0.0.1:3827>
+
+Esto le indica la URL donde se puede encontrar su aplicación: 127.0.0.1
+es una dirección estándar que significa "esta computadora" y 3827 es un
+número de puerto asignado al azar. Puede ingresar esa URL en cualquier
+navegador web compatible para abrir otra copia de su aplicación.
+
+Observe también que R está ocupado: el indicador de R no está visible y
+la barra de herramientas de la consola muestra un icono de señal de
+alto. Mientras se ejecuta una aplicación Shiny, se "bloquea" la consola
+R. Esto significa que no puede ejecutar nuevos comandos en la consola R
+hasta que la aplicación Shiny se detenga.
+
+Puede detener la aplicación y devolver el acceso a la consola usando
+cualquiera de estas opciones:
+
+-   Haga clic en el icono de la señal de alto en la barra de
+    herramientas de la consola R.
+
+-   Haga clic en la consola, luego presione Esc (o presione Ctrl + C si
+    no está usando RStudio).
+
+-   Cierre la ventana de la aplicación Shiny.
+
+El flujo de trabajo básico cuando desarrollamos una aplicación de Shiny
+es escribir código, iniciar la aplicación, jugar con la aplicación,
+escribir más código y repetir. Si está utilizando RStudio, ni siquiera
+necesita detener y reiniciar la aplicación para ver sus cambios; puede
+presionar el botón Recargar aplicación en la caja de herramientas o usar
+el atajo de teclado Cmd/Ctrl + Shift + Enter.
+
+## Layouts
+
+Shiny usa la función fluidPage para crear una pantalla que se ajusta
+automáticamente a las dimensiones de la ventana del navegador del
+usuario. Podemos darle diferentes formas a nuestra interfaz de usuario
+colocando elementos dentro de la función fluidPage.
+
+Por ejemplo, la siguiente función ui crea una interfaz de usuario que
+tiene un panel de título y un diseño de barra lateral, que incluye un
+panel de barra lateral y un panel principal. Tenga en cuenta que estos
+elementos se colocan dentro de la función fluidPage.
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Mi primera app de shiny!"),
+  
+  sidebarLayout(
+    sidebarPanel("Este es el sidebar panel"),
+    mainPanel("Este es el panel principal")
+  )
+)
+```
+
+Copie y pegue este código en el ui de su app.R para observar la nueva
+interfaz. Un punto importante es que como puede notar, los elementos que
+van dentro de nuestro ui deben ir separados por comas.
+
+titlePanel y sidebarLayout son los dos elementos más populares para
+agregar a fluidPage. Juntos crean una aplicación Shiny básica con una
+barra lateral.
+
+sidebarLayout siempre toma dos argumentos:
+
+-   sidebarPanel (coloca contenido en la barra lateral)
+-   mainPanel (coloca contenido en el panel principal)
+
+El panel de la barra lateral aparecerá en el lado izquierdo de su
+aplicación de forma predeterminada. Puede moverlo hacia el lado derecho
+dándole a sidebarLayout el argumento opcional position = "right", como
+se muestra a continuación:
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Mi primera app de shiny!"),
+  
+  sidebarLayout(position = "right",
+                sidebarPanel("Este es el sidebar panel"),
+                mainPanel("Este es el panel principal")
+  )
+)
+```
+
+Podemos ajustar el ancho del sidebarPanel y mainPanel usando el
+argumento width. Un punto importante es que los anchos en shiny se di
+
+## Formato de texto básico en HTML
+
+Para dar formato al texto que mostramos en nuestra aplicación, podemos
+hacerlo usando funciones de shiny. La siguiente tabla nos muestra las funciones
+de shiny y sus equivalentes en HTML5.
+
+| Función de shiny| Equivalente en HTML5  | Crea                                          |
+|-----------------|-----------------------|-----------------------------------------------|
+| p               | <p>                 | Un párrafo de texto                           |
+| h1              | <h1>                | Título de primer nivel                        |
+| h2              | <h2>                | Título de segundo nivel                       |
+| h3              | <h3>                | Título de tercer nivel                        |
+| h4              | <h4>                | Título de cuarto nivel                        |
+| h5              | <h5>                | Título de quinto nivel                        |
+| h6              | <h6>                | Título de sexto nivel                         |
+| a               | <a>                 | Un hipervínculo                               |
+| br              | <br>                | Un salto de línea                             |
+| div             | <div>               | Una división de texto con estilo uniforme     |
+| span            | <span>              | Una división de texto en línea con estilo uniforme    |
+| code            | <code>              | Un bloque de código formateado                |
+| img             | <img>               | Una imagen                                    |
+| strong          | <strong>            | Texto en negrita                              |
+| em              | <em>                | Texto en cursiva                              |
+| HTML            |                     | Pasa directamente caracteres como código HTML |
+
+Veamos algunos ejemplos. Copie este código en su app.R para ver las diferentes ui:
+
+#### Ejemplo 1: Diferentes niveles de 
+
+```{r}
+ui <- fluidPage(
+  titlePanel("My Shiny App"),
+  sidebarLayout(
+    sidebarPanel(),
+    mainPanel(
+      h1("First level title"),
+      h2("Second level title"),
+      h3("Third level title"),
+      h4("Fourth level title"),
+      h5("Fifth level title"),
+      h6("Sixth level title")
+    )
+  )
+)
+```
+
+#### Ejemplo 2: Si George Lucas creara una app de shiny
+
+```{r}
+ui <- fluidPage(
+  titlePanel("My Star Wars App"),
+  sidebarLayout(
+    sidebarPanel(),
+    mainPanel(
+      h6("Episode IV", align = "center"),
+      h6("A NEW HOPE", align = "center"),
+      h5("It is a period of civil war.", align = "center"),
+      h4("Rebel spaceships, striking", align = "center"),
+      h3("from a hidden base, have won", align = "center"),
+      h2("their first victory against the", align = "center"),
+      h1("evil Galactic Empire.")
+    )
+  )
+)
+```
+
+#### Ejemplo 3: Experimentando con diferentes funciones para formato de texto
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Mi Aplicación Shiny"),
+  sidebarLayout(
+    sidebarPanel(),
+    mainPanel(
+      p("p crea un párrafo de texto."),
+      
+      p("Un nuevo comando p() inicia un nuevo párrafo. Proporcione un atributo 
+        de estilo para cambiar el formato de todo el párrafo.", style = "font-family: 'times'; font-si16pt"),
+      
+      strong("strong() hace que el texto sea en negrita."),
+      
+      em("em() crea texto en cursiva (es decir, enfatizado)."),
+      
+      br(), #añade un salto de línea
+      
+      code("code muestra tu texto similar al código de computadora"),
+      
+      div("div crea segmentos de texto con un estilo similar. Esta división de 
+          texto es completamente azul porque pasé el argumento 'style = color:blue' a div", 
+          style = "color:blue"),
+      
+      hr(), # añade una línea horizontal que por defecto es gris claro
+      
+      p("span hace lo mismo que div, pero funciona con",
+        span("grupos de palabras", style = "color:blue"),
+        "que aparecen dentro de un párrafo.")
+    )
+  )
+)
+
+```
+
+### Añadir una imagen a mi app de shiny
+
+Las imágenes pueden mejorar la apariencia de nuestra aplicación y ayudar a los 
+usuarios a comprender el contenido. Shiny usa la función img para colocar archivos 
+de imagen en la interfaz.
+
+Para insertar una imagen, cree una carpeta llamada www en la raíz de su directorio
+y añada la imagen que desea mostrar dentro de la misma. Posteriormente asigne a 
+la función img el nombre de su imagen como argumento src (por ejemplo, img(src = "mi_imagen.png")). 
+
+También podemos incluir otros parámetros compatibles con HTML, como la altura (height) 
+y el ancho (width). Los números de alto y ancho se miden en píxeles.
+
+#### Ejemplo:
+
+Descargue la imagen de RStudio en el siguiente link: https://shiny.posit.co/r/getstarted/shiny-basics/lesson2/www/rstudio.png
+
+```{r}
+ui <- fluidPage(
+  titlePanel("My Shiny App"),
+  sidebarLayout(
+    sidebarPanel(),
+    mainPanel(
+      img(src = "rstudio.png", height = 140, width = 400)
+    )
+  )
+)
+```
+
+## Práctica 
+
+Replique la aplicación mostrada en shiny.
+
+```{r}
+
+```
+
+
+## Práctica semanal
+
+- Averigue cómo insertar un hipervínculo dentro de una aplicación de shiny.
+Por ejemplo, ligando la palabra shiny a la página "https://shiny.rstudio.com".
+
+- Publique este documento al wiki de su repositorio primer_repo en github.
+
+```{r}
+
+```
+

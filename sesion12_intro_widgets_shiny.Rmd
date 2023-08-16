@@ -1,0 +1,325 @@
+---
+title: "sesion12_inputs_shiny"
+author: "Kimberley Isabel Orozco Cornejo"
+date: "2023-07-30"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(shiny)
+```
+
+# Inputs en Shiny
+
+Los widgets de tipo Input en shiny, nos permiten agregar controles
+interactivos para que la persona usuaria pueda interactuar con nuestra
+aplicación. Hoy nos enfocaremos en los siguientes:
+
+-   selectInput
+-   textInput
+-   numericInput
+
+## selectInput
+
+El widget `selectInput` permite a la persona usuaria seleccionar una
+opción de un menú desplegable.
+
+Veamos la ayuda de esta función:
+
+```{r}
+?selectInput
+```
+
+A continuación describimos las más relevantes, pero tenga en cuenta que
+las demás argumentos también tienen utilidad en ciertos escenarios.
+
+-   El inputId es uno de los parámetros más importantes de cualquier
+    input, ya que nos permitirá acceder al valor elegido por la persona
+    usuaria. Debe ser único a lo largo de nuestra aplicación de shiny
+    (es decir 2 widgets diferentes no deben tener el mismo inputId).
+
+-   El label es el texto que queremos que aparezca para indicar al
+    usuario qué es lo que queremos que elija.
+
+-   En choices, debemos escribir en forma de vector o lista las opciones que
+    queremos que se muestren en nuestro selectInput.
+
+Veamos el uso de selectInput con un ejemplo:
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  selectInput(inputId = "selector_materias", # el id de este "input", debe ser único
+              label = "Seleccione las materias a matricular:", 
+              choices = c("Filosofía", "Matemática", "Física", "Biología"),
+              #multiple = FALSE,
+              #width = "20%",
+              #selectize = FALSE,
+              #size = 4
+              )
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+### Práctica 1
+
+Añada otro selectInput a la app mostrada anteriormente. Este input debe
+permitir elegir a la persona usuaria su horario de preferencia. La persona
+debe poder elegir más de una opción. Las opciones deben ser mañana, tarde, y noche.
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  
+  selectInput(inputId = "selector_materias", # el id de este "input", debe ser único
+              label = "Seleccione las materias a matricular:", 
+              choices = c("Filosofía", "Matemática", "Física", "Biología"),
+              multiple = TRUE
+              ),
+  
+  selectInput(inputId = "horarios",
+              label = "Elija su horario de preferencia:",
+              choices = c("Mañana", "Tarde", "Noche"),
+              multiple = TRUE
+  )
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+## textInput
+
+El widget textInput permite a los usuarios introducir texto.
+
+```{r}
+?textInput
+```
+
+El inputId y el label juegan el mismo papel en todos los casos. El
+inputId nos permitirá accesar al valor escrito por la persona, mientras
+que el label es el texto que nos permite indicarle al usuario(a) qué es
+lo que debería proporcionar.
+
+Veamos el uso de textInput con un ejemplo:
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  textInput(inputId = "nombre_persona", 
+            label = "Cuál es tu nombre:",
+            #placeholder = "Marie Curie"
+            )
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+### Práctica 2
+
+Añada otro textInput a la app mostrada anteriormente. Este textInput debe
+pedir a la persona que ingrese su lugar de nacimiento (Provincia, Cantón). Como 
+Placeholder coloque San José, Desamparados.
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  textInput(inputId = "nombre_persona", 
+            label = "Cuál es tu nombre:",
+            placeholder = "Marie Curie"
+            ),
+  
+  textInput(inputId = "lugar_nacimiento",
+            label = "Coloque su lugar de nacimiento (Provincia, Cantón)",
+            placeholder = "San José, Desamparados"
+            )
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+## numericInput
+
+El widget numericInput permite a los usuarios ingresar valores de tipo
+numéricos.
+
+```{r}
+?numericInput
+```
+
+El numericInput nos permite especificar el valor mínimo y máximo (min y
+max), así como el espaciado entre valores (step) entre dichos valores.
+
+Veamos esto con un ejemplo:
+
+```{r}
+ui <- fluidPage(
+  numericInput(inputId = "numero_naranjas", 
+               label = "Elija la cantidad de naranjas que desea ordenar:", 
+               value = 12, #indica el valor inicial a mostrar
+               min = 1, #permite indicar el valor mínimo
+               max = 40, #permite indicar el valor máximo
+               step = 5 #permite indicar el incremento entre números
+               )
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+### Práctica en grupos
+
+Cree un archivo llamado app_sesion12_a.R y replique la aplicación de shiny mostrada. 
+La imagen puede descargarla desde esta dirección:
+<https://parquelalibertad.org/cetav/sites/default/files/styles/imagen_preview_noticias/public/captura_de_pantalla_2021-05-06_a_las_11.22.24_0.png?itok=o5IlbCMM>.
+
+El nombre debe recibir siempre caracteres, la edad un número, y la provincia debe
+mostrarse como opciones a elegir.
+
+Para la edad, el valor mínimo permitido debe ser 15, el valor mostrado
+por la aplicación al entrar debe ser 18, y el valor máximo permitido
+debe ser 120.
+
+# Outputs básicos en Shiny
+
+En la sección anterior, entendimos cómo crear algunos elementos básicos
+para *recibir* información de la persona usuaria.
+
+Ahora, una vez que obtenemos esa información por medio de la interfaz,
+usualmente deseamos hacer algo con esa información. Por ejemplo
+utilizarla como parámetro para hacer algún gráfico, enviarla a una base
+de datos, utilizarla para hacer algún procesamiento o cálculo, etc.
+
+En shiny, cuando queremos crear un output, tenemos que tener en cuenta
+que usualmente necesitaremos 2 componentes:
+
+-   render*
+-   *Output
+
+Estas funciones trabajan en conjunto:
+
+| **Elemento a mostrar en shiny** | **render\* (va en el server.R)** | **\*Output (va en el ui.R)** |
+|---------------------------------|----------------------------------|------------------------------|
+| Texto                           | renderText()                     | textOuput() o verbatimTextOutput()|
+| Tabla                           | renderTable()                    | tableOutput()                |
+| Gráfico                         | renderPlot()                     | plotOutput()                 |
+
+Para ilustrar el uso de Outputs en shiny, vamos a desarrollarlo con un
+ejemplo. Suponga que tenemos una aplicación de shiny que nos permite indicar
+nuestro nombre y las materias a matricular, como se muestra a continuación:
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  
+  selectInput(inputId = "selector_materias",
+              label = "Seleccione las materias a matricular:", 
+              choices = c("Filosofía", "Matemática", "Física", "Biología"),
+              #multiple = FALSE,
+              #width = "20%",
+              #selectize = FALSE,
+              #size = 4
+              )
+  
+)
+
+server <- function(input, output, session) {
+  
+}
+
+shinyApp(ui, server)
+```
+
+Suponga que ahora queremos añadir en la pantalla un texto que indique
+la materia elegida por la persona en cualquier momento, indicando algo como
+"Le damos la bienvenida, usted ha seleccionado matricular la materia
+Filosofía".
+
+Para implementar esto en shiny, lo primero que debemos hacer es identificar el tipo
+de Output que queremos implementar. En este caso sería un Ouput de texto. Otros disponibles
+son tablas, figuras, imágenes, entre otros.
+
+Para un output tipo texto, tal como vemos en la tabla indicada arriba, vamos a necesitar
+crear un renderText en el server, y un textOutput en el ui. 
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  selectInput(inputId = "selector_materias",
+              label = "Seleccione las materias a matricular:", 
+              choices = c("Filosofía", "Matemática", "Física", "Biología"),
+              #multiple = FALSE,
+              #width = "20%",
+              #selectize = FALSE,
+              #size = 4
+              ),
+  
+  textOutput("materia_elegida")
+ 
+)
+
+server <- function(input, output) {
+  
+  output$materia_elegida <- renderText(input$selector_materias)
+  
+}
+
+shinyApp(ui, server)
+```
+
+Dentro de renderText podemos concatenar palabras si lo queremos, por ejemplo
+para mostrar la frase "Le damos al bienvenida, la materia que usted eligió para 
+matricular es <materia>.", dentro del renderText ponemos esto:
+
+```{r}
+paste0("Le damos la bienvenida, la materia que usted eligió matricular es: ",
+                 input$selector_materias, ".")
+```
+
+A continuación describimos el flujo:
+
+- En renderText, accedemos al valor seleccionado por la persona en el selectInput selector_materias.
+- Los elementos de tipo render, siempre se crean asignándolos a un objeto de tipo output,
+cuya sintaxis es output$nombre_output, donde nombre_output es un nombre que decidimos
+darle al objeto.
+- Este nombre_output se accede desde un *Ouput, por ejemplo textOuput, tableOutput, etc. Debe 
+corresponder al objeto render que creamos.
+
+### Práctica
+
+Cree un archivo llamado app_sesion12_b.R y replique la aplicación de Shiny que se
+le solicita.
+
+

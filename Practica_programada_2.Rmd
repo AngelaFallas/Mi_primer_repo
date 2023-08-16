@@ -127,4 +127,3 @@ datos_calidad_aire_ciudades <- list("Bueno" = good, "Moderado" = moderate, "Insa
 write_xlsx(datos_calidad_aire_ciudades, path = "datos/datos_calidad_aire_ciudades.xlsx")
 
 ```
-

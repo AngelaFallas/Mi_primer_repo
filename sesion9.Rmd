@@ -1,0 +1,320 @@
+---
+title: "sesion 9"
+author: "Kimberley Isabel Orozco Cornejo"
+date: "2023-07-18"
+output: 
+  html_document: default
+always_allow_html: true
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# Carga de paquetes y conexión
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(stringr)
+library(plotly)
+library(readr)
+library(lubridate)
+```
+
+# Introducción
+
+En esta sesión, introduciremos el concepto de factor, y aprenderemos el uso de la 
+biblioteca plotly para generar gráficos con más funcionalidades. 
+
+## Factores
+
+In R, se utilizan factores para trabajar con variables categóricas, variables que 
+tienen un conjunto fijo y conocido de posibles valores. También son útiles cuando 
+queremos mostrar vectores de caracteres en un orden no alfabético.
+
+Veamos esto con un ejemplo. Supongamos que tenemos un vector con meses como
+se muestra a continuación:
+
+```{r}
+x1 <- c("Dec", "Apr", "Jan", "Mar")
+```
+
+Si usamos la función class para ver el tipo de vector que tenemos:
+
+```{r}
+class(x1)
+```
+
+vemos que es de tipo carácter. EL uso de una cadena de caracteres para registrar 
+esta variable tiene dos problemas:
+
+1. Solo hay doce meses posibles y nada nos protege de los errores tipográficos:
+
+```{r}
+x2 <- c("Dec", "Apr", "Jam", "Mar")
+```
+
+2. No se ordena de una manera útil (ya que se ordena de manera alfabética)
+
+```{r}
+sort(x1) # sort ordena un vector
+```
+
+Podemos solucionar ambos problemas con un factor. Para crear un factor, debemos 
+comenzar creando una lista de los niveles válidos:
+
+```{r}
+niveles_meses <- c(
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+)
+```
+
+Ahora podemos crear un factor ordenado:
+
+```{r}
+y1 <- factor(x1, ordered = TRUE, levels = niveles_meses) 
+```
+
+Si evaluamos ahora la clase de y1:
+
+```{r}
+class(y1)
+```
+
+Vemos que ahora es un factor. Es importante mencionar que no siempre es necesario
+transformar variables categóricas en factores. En la mayoría de los casos no lo es,
+sin embargo cuando trabajamos con meses y queremos ordenarlos por ejemplo en gráficos,
+usar factores ordenados nos puede facilitar muchas cosas.
+
+Por ejemplo, si ahora ordenamos usamos la función sort sobre y1, obtenemos los meses
+ordenados:
+
+```{r}
+sort(y1)
+```
+
+
+## Lectura de datos
+
+Hoy trabajaremos con un conjunto de datos sobre ventas de propiedades en UK.
+
+```{r, eval = TRUE}
+uk_housing <- read_csv("datos/uk_housing.csv")
+```
+
+Hagamos una tabla que muestre todas las ventas de propiedades que se dieron en el
+condado de Buckinghamshire para el año 2008.
+
+```{r}
+tabla_propiedades_buck <- uk_housing |>  
+  mutate(mes = month(`Date of Transfer`, label = TRUE),
+         anyo = year(`Date of Transfer`)) |> 
+  filter(County == "BUCKINGHAMSHIRE", 
+         anyo == 2008) |> 
+  select(District, mes) |> 
+  mutate(mes = factor(mes, levels = niveles_meses))
+```
+
+Veamos la tabla:
+
+```{r}
+glimpse(tabla_propiedades_buck)
+```
+
+## Contrucción de gráfico en ggplot
+
+Recordemos cómo construir un gráfico de barras con ggplot:
+
+```{r}
+grafico_buck <- tabla_propiedades_buck |>  
+  ggplot(aes(x = mes, fill = District)) +
+  geom_bar() +
+  xlab("Mes") + 
+  ylab("Total de ventas") +
+  labs(title = "Total de ventas por distrito en el condado de Buckinghamshire",
+       subtitle = "Año 2008",
+       fill = "Distrito") +
+  theme_minimal(base_size = 13) + #ajusta tamaño de escala
+  theme(legend.position = "bottom")
+```
+
+Veamos el gráfico sencillo que acabamos de crear:
+
+```{r}
+grafico_buck
+```
+
+Ahora, añadiremos interactividad con la librería plotly. Para hacerlo, solamente
+necesitamos pasarle como argumento el gráfico de ggplot que construimos a la función ggplotly, de la siguiente manera:
+
+```{r}
+ggplotly(grafico_buck)
+```
+
+Observe que esto abrirá el gráfico en nuestro Viewer, y veremos que es un gráfico interactivo, donde podemos observar por ejemplo la cantidad de ventas por distrito,
+por mes.
+
+Arriba vemos también una barra de herramientas. Si queremos ocultarla, podemos
+hacerlo así:
+
+```{r}
+ggplotly(grafico_buck) |> 
+  config(displayModeBar = F)
+```
+
+## Práctica
+
+Utilizando los datos de uk-housing, haga un gráfico de barras que muestre el total
+de ventas por distrito y mes en el condado de East Sussex para el año 2009. Coloque
+al gráfico una paleta de colores a su gusto.
+
+```{r}
+tabla_propiedades_east_susexx <- uk_housing |>  
+  mutate(mes = month(`Date of Transfer`, label = TRUE),
+         anyo = year(`Date of Transfer`)) |> 
+  filter(County == "EAST SUSSEX", 
+         anyo == 2009) |> 
+  select(District, mes) |> 
+  mutate(mes = factor(mes, levels = niveles_meses))
+
+
+grafico_sussex <- tabla_propiedades_east_susexx |>  
+  ggplot(aes(x = mes, fill = District)) +
+  geom_bar() +
+  xlab("Mes") + 
+  ylab("Total de ventas") +
+  labs(title = "Total de ventas por distrito en el condado de East Sussex",
+       subtitle = "Año 2009",
+       fill = "Distrito") +
+  theme_minimal(base_size = 10) + #ajusta tamaño de escala
+  theme(legend.position = "bottom") +
+scale_fill_manual(values = mi_paleta)
+```
+
+
+## Construcción de gráfico directamente con plot_ly
+
+Empecemos por contruir la tabla que vamos a analizar. En este caso, vamos a crear
+una tabla que indique los precios promedio y número de ventas por distrito, para 
+los condados de Buckinghamshire, y East Sussex:
+
+```{r scatterplot}
+tabla_propiedades_precios <- uk_housing |>  
+  mutate(mes = month(`Date of Transfer`, label = TRUE),
+         anyo = year(`Date of Transfer`)) |> 
+  filter(County %in% c("BUCKINGHAMSHIRE", "EAST SUSSEX"), 
+         anyo == 2008) |> 
+  group_by(County, District) |> 
+  summarise(precio_medio = round(mean(Price)),
+            numero_ventas = n()) 
+```
+
+Ahora, veamos cómo construir un gráfico directamente con plot_ly:
+
+```{r}
+grafico_precios_ventas <- tabla_propiedades_precios |>  
+  plot_ly(x = ~precio_medio,
+          y = ~numero_ventas,
+          type = "scatter",
+         color = ~County,
+          # symbol = ~County,
+          size = ~precio_medio,
+          # text = ~District,
+          mode = "markers", #lines, lines+markers
+          marker = list(
+            sizemode = 'diameter', #otra opcion es area, radius
+            opacity = 0.7 # a mayor valor, más opaco
+          ),
+          fill = ~'', # esto elimina un mensaje de warning
+          sizes = c(10,20), #para jugar con el tamaño mínimo y máximo de las burbujas
+          hoverinfo = "text",
+          text = ~paste("</br> <b>Ventas: </b>", numero_ventas,
+                        "</br> <b>Precio medio: </b>", format(precio_medio, big.mark = ","),
+                        "</br> <b>Distrito: </b>", str_to_title(District))
+  )
+
+grafico_precios_ventas
+```
+
+Ok, ¿y si queremos agregar títulos de ejes y formatearlo como deseemos?
+
+```{r}
+grafico_precios_ventas |> 
+  layout( 
+    title = list(text = "Número de ventas en función de precio medio de propiedades por condado"),
+    xaxis = list(title=list(text = "Precio promedio de propiedades")),
+    yaxis = list(title=list(text = "Número de ventas")),
+    legend = list(title=list(text='Condados', 
+                             font = list(
+                               family = "Arial",
+                               size = 14,
+                               color = "green")))
+  )
+```
+
+## Animaciones en un gráfico
+
+Con ggplotly podemos generar gráficos con animaciones interesantes. Empecemos
+por crear una tabla que queremos visualizar, por ejemplo el número de ventas por distrito
+y mes en el condado de Buckinghamshire en el año 2008:
+
+```{r}
+tabla_propiedades_conteo <- uk_housing |>  
+  mutate(mes = month(`Date of Transfer`, label = TRUE),
+         anyo = year(`Date of Transfer`)) |>  
+  filter(County == "BUCKINGHAMSHIRE", 
+         anyo == 2008) |>  
+  group_by(District, mes) |>  
+  summarise(numero_ventas = n()) |> 
+  mutate(mes = factor(mes, levels = niveles_meses)) # transforma el mes en factor
+  #mutate(numero_ventas = as.double(numero_ventas)) # esto es necesario a veces cuando tipo de variable es int64
+```
+
+Ahora, recordemos la manera de hacer un gráfico de scatter en ggplot:
+
+```{r}
+grafico_puntos_ventas_buck <- tabla_propiedades_conteo %>% 
+  ggplot(aes(x = mes, y = numero_ventas, color = District)) +
+  geom_point() + #indica que es grafico de puntos (scatter)
+  xlab("Mes") + 
+  ylab("Total de ventas") +
+  labs(title = "Total de ventas por distrito en el condado de Buckinghamshire",
+       subtitle = "Año 2008",
+       fill = "Distrito") 
+
+grafico_puntos_ventas_buck
+```
+
+Supongamos ahora que queremos ver una animación de cómo varía el número de ventas con 
+el paso del tiempo, en este caso los meses. Para lograr esto, modificamos un poco 
+el código anterior introduciendo la aes `frame` en geom_point, y colocando el nombre
+de la variable que tenemos en el eje x:
+
+```{r}
+grafico_puntos_ventas_buck2 <- tabla_propiedades_conteo |> 
+  ggplot(aes(x = mes, y = numero_ventas, color = District)) +
+  geom_point(aes(frame = mes)) + # esta es la unica casilla que cambia
+  xlab("Mes") + 
+  ylab("Total de ventas") +
+  labs(title = "Total de ventas por distrito en el condado de Buckinghamshire",
+       subtitle = "Año 2008",
+       fill = "Distrito")
+
+# Generar un grafico animado
+grafico_puntos_ventas_buck3 <- ggplotly(grafico_puntos_ventas_buck2)
+
+grafico_puntos_ventas_buck3
+```
+
+## Práctica
+
+A partir de los datos de UK Housing, obtenga el promedio del precio de las ventas 
+de propiedades por mes, para el año 2008 y el County "East Sussex". Posteriormente
+cree una animación con ggplotly que muestre en el eje x los meses, y en el eje y el 
+promedio de precio de las ventas.
+```{r}
+promedio_uk_housing <- 
+```
+

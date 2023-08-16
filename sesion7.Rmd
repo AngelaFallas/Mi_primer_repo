@@ -1,0 +1,219 @@
+---
+title: "sesion7_importacion_exportacion_datos"
+author: "Kimberley Isabel Orozco Cornejo"
+date: "2023-06-27"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(stringr)
+library(readr)
+library(readxl) # para leer datos de excel
+library(writexl) # para guardar datos como excel
+library(utils)
+library(RSQLite) # para interactuar con bases de datos sqlite
+library(DBI) # ayuda con conexiones a bbdd
+```
+
+# Introducción
+
+A lo largo de este curso, hemos aprendido algunas maneras de leer datos, por ejemplo:
+
+- Leer documentos de excel con readxl
+- Leer documentos de csv con readr
+
+Existen otros formatos en los cuales es posible que nos proporcionen los datos, 
+siendo comunes los archivos txt y las bases de datos (Postgres, oracle, etc).
+
+Adicionalmente, hemos aprendido cómo generar reportes de análisis de datos sencillos
+con RMarkdown, renderizando los documentos como pdf, word o html. Tenga en cuenta que 
+en algunos casos, no nos interesa compartir un documento, sino que tal vez nos 
+interesa compartir un conjunto de datos ya limpio, preprocesado o procesado, ya
+sea como archivo a compartir, o como una tabla en una base de datos dada.
+
+En esta sesión, haremos un repaso sobre algunas de estas estrategias para ampliar
+nuestra caja de herramientas.
+
+## Importación de datos
+
+Primero, vamos a trabajar con un conjunto de datos de los colegios de Costa Rica.
+El archivo se llama datos_colegios.xlsx
+
+```{r}
+datos_colegios <- read_excel("datos/datos_colegios.xlsx", skip = 1)
+```
+
+## Ejercicio 1.
+
+Vamos a practicar un poco lo que es el pre procesamiento de los datos, y así ir poniendo
+en práctica y aprendiendo nuevos trucos.
+
+a. Ajuste los nombres de las columnas para que tengan solo la primera letra mayúscula.
+Por ejemplo NOMBRE debería ser Nombre, y CURSO LECTIVO debería ser Curso Lectivo.
+
+```{r}
+nombres_actuales <- colnames(datos_colegios) # Obtiene los nombres actuales
+nuevos_nombres <- str_to_title(nombres_actuales) # 
+
+colnames(datos_colegios) <- nuevos_nombres
+```
+
+b. Haga lo mismo para las observaciones de aquellas columnas que son de tipo carácter.
+Por ejemplo, LA PALMERA debería decir La Palmera. Guarde los resultados en un objeto
+que se llame datos_colegios_limpio.
+
+```{r}
+datos_colegios_2 <- datos_colegios |> 
+  rename_with(~str_to_title(.))
+              
+datos_colegios_limpio <- datos_colegios_2 |> 
+  mutate(across(where(is.character), function (x) str_to_title(x)))
+```
+
+----
+
+Muy bien! Ahora continuemos. Observe que estos datos han sufrido modificaciones, 
+y puede que usted tenga que compartirlos a otras personas. Como dijimos, hay
+varias maneras de hacerlo. 
+
+## Exportar los datos como csv
+
+Para exportar los datos como csv con coma simple, podemos usar la función write.csv
+de la librería utils:
+
+```{r}
+#write.csv(nombre_dataframe, file = ruta en la compu donde queremos guardar el archivo)
+
+write.csv(datos_colegios_limpio, file = "datos/colegios_en_csv.csv")
+```
+
+OJO: bajo el argumento file, debe colocar la ruta así como el nombre del 
+archivo a crear.
+
+## Exportar los datos como excel
+
+Para exportar los datos como un nuevo excel, podemos usar la librería writexl.
+Esta tiene una función llamada write_xlsx que nos permite guardar la información 
+e inclusive especificar el nombre de las "sheets" donde queremos guardar los datos.
+
+```{r}
+write_xlsx(datos_colegios_limpio, path = "datos/colegios_en_excel.xlsx")
+```
+
+Observe que esto creó una hoja llamada "Sheet1" en donde se guardaron los datos.
+A veces, es conveniente poder especificar los nombres de las "sheets" donde guardamos
+los datos. Podemos hacer esto usando la función list, de la siguiente manera:
+
+```{r}
+datos_sheets <- list("Información de colegio" = datos_colegios_limpio) 
+
+write_xlsx(datos_sheets, path = "datos/colegios_en_excel2.xlsx")
+```
+
+En datos_guardar estamos creando una lista donde a la izquierda colocamos el nombre
+de la hoja y a la derecha colocamos el nombre del dataframe a guardar. Si queremos crear
+varias "sheets", podemos añadirlas adicionalmente con comas. Por ejemplo, suponga que
+quiere crear un excel que tenga los datos de colegio antes del procesamiento y después 
+del procesamiento. Lo haríamos así:
+
+```{r}
+datos_sheets <- list("Información colegio limpia" = datos_colegios_limpio,
+                      "Información colegio sin procesar" = datos_colegios)
+
+write_xlsx(datos_sheets, path = "datos/colegios_limpia_y_sin_procesar.xlsx")
+
+```
+
+## Práctica
+
+Exporte los datos de colegio a un archivo de excel con 3 pestañas: la primera
+se llama 2009 y tiene solo los datos del Curso Lectivo del 2009, otra llamada 2010 
+con solo los datos del curso Lectivo del 2010, y la última llamada 2020 con solo
+los datos del curso lectivo del 2010.
+
+```{r}
+
+```
+
+### Bonus: Exportar a bbdd SQLite
+
+Como dijimos anteriormente, otra manera de leer y exportar datos en R es directamente
+de bases de datos. Esto se sale un poco del alcance de este curso, sin embargo
+podemos echar un vistazo a una base de datos local que nos puede servir para practicar
+conexiones futuras a bases de datos. Hablamos de la base de datos sqlite.
+
+SQLite es un sistema de gestión de bases de datos relacional (RDBMS) que se utiliza 
+comúnmente para fines de desarrollo local, prueba y producción en aplicaciones de pequeña escala. Es una base de datos autocontenida, de archivo único, que es muy fácil de 
+instalar y usar.
+
+A diferencia de otros sistemas de gestión de bases de datos como MySQL, Oracle o 
+SQL Server, que son sistemas basados en cliente-servidor, SQLite es una base de datos 
+de servidor cero. Esto significa que no necesita un proceso de servidor separado o 
+sistema para funcionar, sino que se integra directamente en la aplicación.
+
+Vamos a aprender lo básico de SQlite. Lo primero es, que para trabajar con una bbdd de
+SQlite en R, usamos el paquete RSQLite.
+
+```{r}
+library(RSQLite)
+```
+
+### Conectarse o crear la bbdd de sqlite
+
+Para conectarnos a una base de datos de sqlite, usamos la función dbConnect, y en 
+dbname colocamos el nombre de la bbdd que queremos leer o crear (la bbdd se creará 
+si no existe ninguna con ese nombre)
+
+```{r}
+con <- dbConnect(RSQLite::SQLite(), dbname = "my_database.sqlite")
+```
+
+Observe que en su entorno, aparece un objeto de tipo que indica que es una conexión formal
+de sqlite.
+
+### Guardar datos en una tabla de la bbdd sqlite
+
+Si queremos guardar datos en una tabla de la bbdd, podemos usar la función dbWriteTable.
+Los parámetros que recibe esta función son: el nombre de la conexión, el nombre de la tabla
+donde queremos escribir los datos, y el nombre del dataframe que queremos guardar.
+
+```{r}
+dbWriteTable(con, "datos_cole", datos_colegios)
+```
+
+### Leer los datos de la bbdd sqlite
+
+Ok, ya guardamos datos en este mini base de datos. Ahora qué? Bueno, podemos leerlos
+de varias maneras. Por ejemplo, para traer la tabla completa, podemos usar la función
+dbReadTable, in
+
+```{r}
+data_en_db <- dbReadTable(con, "datos_cole") #indicar nombre de la conexion y de la tabla a leer
+```
+
+Excelente! Ha traído todos los datos de la bbdd. Suponga que quiere extraer solamente
+los del año 2009. Eso puede hacerlo con un filter de dplyr, o puede hacerlo
+con un query de SQL y la función dbGetQuery, como se ve a continuación.
+
+```{r}
+datos_2009 <- dbGetQuery(con, "SELECT * FROM datos_cole WHERE `Curso Lectivo` = 2009")
+```
+
+Puede experimentar con esto de muchas maneras. Trate de hacer algunos queries que haya
+aprendido para obtener algunos resultados interesantes :)
+
+### Desconectarse de la bbdd sqlite
+
+Cuando terminamos de trabajar con bases de datos, es importante cerrar la conexión.
+
+```{r}
+dbDisconnect(con)
+```
+
