@@ -1,0 +1,195 @@
+---
+title: "practica_final_rii"
+author: "Juliana Cruz"
+date: "2023-08-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(readr)
+library(readxl)
+library(tidyr)# doma de datos
+library(janitor) #limpieza de datos
+library(lubridate)
+library(hms)
+library(ggplot2)
+library(plotly)
+library(stringr)
+library(leaflet)
+library(gt)
+```
+
+# Preparación y limpieza de Datos:
+
+2.1 Lectura de datos en R 
+
+```{r include=FALSE}
+terremotos_profundidad <- read_csv("https://raw.githubusercontent.com/isa229/programacion_analisis_datos_ii/main/terremotos_profundidad.csv")
+terremotos_magnitud <- read_csv("https://raw.githubusercontent.com/isa229/programacion_analisis_datos_ii/main/terremotos_magnitud.csv")
+```
+2.2 Traducción de variables al español
+_
+2.2.1 Renombrar variables de terremotos_maginitud
+
+```{r}
+terremotos_magnitud <- terremotos_magnitud |> 
+ rename(Magnitud = Magnitude,
+        Tipo_magnitud = `Magnitude Type`)
+
+```
+
+2.2.2
+
+```{r}
+terremotos_profundidad <- terremotos_profundidad |> 
+ rename(Fecha = Date,
+        Hora = Time,
+        Latitud = Latitude,
+        Longitud = Longitude,
+        Tipo = Type, 
+        Profundidad = Depth,
+        Error_profundidad = `Depth Error`)
+```
+
+2.3 Eliminación de filas duplicadas
+
+
+```{r}
+terremotos_magnitud <- terremotos_magnitud |> 
+  distinct()
+```
+
+
+```{r}
+terremotos_profundidad <- terremotos_profundidad |> 
+  distinct()
+```
+
+2.4 Transformación de tipos de variables 
+
+```{r}
+terremotos_profundidad <- terremotos_profundidad |> 
+  mutate(Fecha = mdy(Fecha))
+```
+
+2.5. Transformación de datos
+
+```{r}
+dup_terremotos_profundidad  <- terremotos_profundidad |>  
+  select(Tipo) |> 
+  distinct()
+
+terremotos_profundidad <- terremotos_profundidad |> 
+  mutate(Tipo = str_to_title(Tipo))
+
+```
+
+2.6. Creación de columnas adicionales
+
+```{r}
+terremotos_profundidad <- terremotos_profundidad |> 
+  mutate(Mes = format(Fecha, "%B"))
+
+terremotos_profundidad <- terremotos_profundidad |> 
+  mutate(Anio = format(Fecha, "%Y"))
+```
+
+2.7. Unir conjunto de datos
+
+```{r}
+datos_terremotos <- left_join(terremotos_magnitud, terremotos_profundidad, by = "ID")
+```
+
+2.8. Eliminar columnas vacías
+
+```{r}
+datos_terremotos <- datos_terremotos |> 
+  remove_empty(which = c("rows", "cols"))
+
+datos_terremotos <- subset(datos_terremotos, select = -...1.x)
+
+datos_terremotos <- subset(datos_terremotos, select = -...1.y)
+```
+
+Hacer un pequeño análisis sobre variación para la variable magnitud. Puede usar ggplot2 o plolty,
+así como lo aprendido en el cuatrimestre pasado
+
+```{r}
+histograma_magnitud <- ggplot(data = datos_terremotos) +
+  geom_histogram(mapping = aes(x = Magnitud), binwidth = 0.1, fill = "#1E8A98") +
+  xlab("Magnitud") +
+  ylab("Frecuencia") +
+  labs(title = "Variación de la Magnitud") +
+  theme_classic()
+```
+
+```{r}
+ggplotly (histograma_magnitud)
+```
+
+```{r}
+ggplot(data = datos_terremotos) +
+  geom_boxplot(mapping = aes(x = Magnitud, y = Tipo, color = "#1E8A98"))
+```
+
+
+
+```{r}
+terremotos_cr <- as.data.frame(table(datos_terremotos$Magnitud, datos_terremotos$Latitud, datos_terremotos$Longitud, datos_terremotos$Tipo, datos_terremotos$Anio))
+
+directores_peliculas <- datos_netflix_sin_na |> 
+  group_by(Director) |> 
+  filter(Tipo =="Movie") |> 
+  count() |> 
+  arrange(desc(n))
+
+
+terremotos_costa_rica_10_magnitudes <- datos_terremotos |>
+   filter(Latitud >= 8, Latitud <= 11, 
+          Longitud >= -85, Longitud <= -82, 
+          Tipo == "Earthquake") |>
+  arrange(desc(Magnitud)) |>
+  head(10)|>
+  group_by(Mes, Anio, Latitud, Longitud, Magnitud, Profundidad)
+
+terremotos_costa_rica_10_magnitudes2 <- datos_terremotos |>
+   filter(Latitud >= 8, Latitud <= 11, 
+          Longitud >= -85, Longitud <= -82, 
+          Tipo == "Earthquake") |>
+  arrange(desc(Magnitud)) |>
+  head(10) |> 
+  select(-Fecha, -Hora, -Tipo_magnitud, -ID)
+
+terremotos_cr_gt <- terremotos_costa_rica_10_magnitudes2 |> 
+  gt()
+
+terremotos_cr_gt
+
+```
+
+```{r}
+mapa_terremotos_costa_rica <- terremotos_costa_rica_10_magnitudes 
+
+mapa_terremotos_costa_rica <- leaflet() |> 
+  addTiles() |> 
+  addMarkers(lng = -83.073, lat = 9.685, popup = "1991") |> 
+  addMarkers(lng = -84.808, lat = 9.919, popup = "1990") |> 
+  addMarkers(lng = -83.123, lat = 8.717, popup = "1983") |> 
+  addMarkers(lng = -84.159, lat = 9.044, popup = "1999") |> 
+  addMarkers(lng = -84.323, lat = 10.210, popup = "1992") |> 
+  addMarkers(lng = -84.759, lat = 10.679, popup = "1973") |> 
+  addMarkers(lng = -82.943, lat = 8.316, popup = "1979") |> 
+  addMarkers(lng = -83.688, lat = 9.652, popup = "1983") |> 
+  addMarkers(lng = -82.824, lat = 8.416, popup = "2003") |>
+  addMarkers(lng = -83.483, lat = 8.951, popup = "1979")
+
+mapa_terremotos_costa_rica
+
+```
+

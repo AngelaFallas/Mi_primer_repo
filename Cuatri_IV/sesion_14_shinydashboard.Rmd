@@ -1,0 +1,417 @@
+---
+title: "sesion14_inputs_shinydashboard"
+author: "Kimberley Isabel Orozco Cornejo"
+date: "2023-08-22"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  markdown: 
+    wrap: 72
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(shiny)
+library(datasets)
+library(shinydashboard)
+library(ggplot2)
+library(dplyr)
+```
+
+# Outputs en shiny (continuación)
+
+En las últimas semanas aprendimos sobre el uso de la librería shiny, y algunos
+inputs como input de texto, numérico y de selección múltiple. Adicionalmente
+aprendimos sobre cómo mostrar outputs de tipo texto, con textOutput o verbatimTextOutput.
+
+Acá conviene recordar las funciones que necesitamos en el ui y en el server para
+mostrar texto, tablas o gráficos:
+
+| **Elemento a mostrar en shiny** | **render\* (va en el server.R)** | **\*Output (va en el ui.R)** |
+|---------------------------------|----------------------------------|------------------------------|
+| Texto                           | renderText()                     | textOuput() o verbatimTextOutput()|
+| Tabla                           | renderTable() / renderDataTable()| tableOutput() o dataTableOutput()|
+| Gráfico                         | renderPlot()                     | plotOutput()                 |
+
+
+## Tablas
+
+Hay 2 maneras de mostrar dataframes como tablas en shiny:
+
+- `tableOutput()` junto con `renderTable()` muestra una tabla estática de datos, mostrando 
+todos los datos a la vez.
+
+- `dataTableOutput()` junto con `renderDataTable()` muestra una tabla dinámica, mostrando un 
+número fijo de filas junto con controles para cambiar qué filas son visibles.
+
+Cuándo usar uno u otro?
+
+`tableOutput()` es más útil para tablas relativamente pequeñas y fijas, mientras que
+`dataTableOutput()` es más adecuado si deseas exponer datos de un dataframe más extenso 
+a la persona usuaria.
+
+Ejemplo.
+
+En este ejemplo vamos a observar las diferencias de trabajar con tableOutput o
+con dataTableOutput. Vamos a hacer uso de uno de los dataframes disponibles en R
+para pruebas: mtcars
+
+```{r}
+mtcars <- datasets::mtcars
+```
+
+Vamos a mostrar un ejemplo ahora sobre cómo crear un objeto tipo tabla para ser
+mostrado en shiny.
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  
+  p("A continuación se muestre la tabla mtcars creada con renderTable y tableOutput"),
+  
+  tableOutput("tabla_estatica"),
+  
+  hr(),
+  
+  p("A continuación se muestre la tabla mtcars creada con renderDataTable y dataTableOutput"),
+  
+  dataTableOutput("tabla_dinamica")
+)
+
+server <- function(input, output, session) {
+  
+  output$tabla_estatica <- renderTable(
+    mtcars 
+    )
+  
+  output$tabla_dinamica <- renderDataTable(
+    mtcars
+    )
+  
+}
+
+# App
+shinyApp(ui = ui, server = server)
+```
+
+Práctica
+
+1. Cómo haría si deseara mostrar solamente las primeras 10 filas del dataframe mtcars
+en la app de shiny?
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  
+  p("A continuación se muestre la tabla mtcars creada con renderTable y tableOutput"),
+  
+  tableOutput("tabla_estatica"),
+  
+  hr(),
+  
+  p("A continuación se muestre la tabla mtcars creada con renderDataTable y dataTableOutput"),
+  
+  dataTableOutput("tabla_dinamica")
+)
+
+server <- function(input, output, session) {
+  
+  output$tabla_estatica <- renderTable(
+    mtcars 
+    )
+  
+  output$tabla_dinamica <- renderDataTable(
+    mtcars |> 
+      head(10)
+    )
+  
+}
+
+# App
+shinyApp(ui = ui, server = server)
+```
+
+2. Añada a esta app de shiny un sidebarPanel y un mainPanel. En el sidebarPanel añada
+un input que reciba un número. Use este input para ajustar el número de filas que se 
+de la tabla que se muestra en shiny. Por ejemplo, si la persona elige el número
+5, deben mostrarse las primeras 5 filas, si elige 20, deben mostrarse las primeras 20. 
+En el mainPanel muestre la tabla con la cantidad de filas elegidas.
+
+OJO: Es importante en estos casos, tener en cuenta los casos límite. El input numérico
+acá debería permitir recibir como máximo, el número de filas que tiene mtcars, y no más 
+de eso.
+
+```{r}
+library(shiny)
+
+ui <- fluidPage(
+  sidebarLayout(
+   sidebarPanel(
+     numericInput(inputId = "filas",
+                  label = "Mostrar filas",
+                  value = 1,
+                  min = 1,
+                  max = 32
+                )
+     ),
+   mainPanel(
+     width = 7,
+     p("A continuación se muestre la tabla mtcars creada con renderDataTable y dataTableOutput"),
+     dataTableOutput("tabla_dinamica")
+     )
+   )
+)
+
+server <- function(input, output, session) {
+  
+  output$tabla_dinamica <- renderDataTable( 
+    mtcars |> 
+      head(input$filas)
+    )
+
+}
+
+# App
+shinyApp(ui = ui, server = server)
+```
+
+3. Inspeccione el dataframe mtcars. Cuáles de estas variables son discretas? 
+Elija una de las variables discretas y cree un gráfico de barras de ggplot2 para
+visualizar el comportamiento de dicha variable. (No es necesario integrar esto a shiny aún)
+
+```{r}
+grafico_1 <- ggplot(data =  mtcars) +
+  geom_bar(mapping = aes(x = cyl)) 
+```
+
+## Gráficos
+
+En shiny podemos también crear y mostrar gráficos que creamos con ggplot2. Para 
+lograr esto, usamos renderPlot en el server, y plotOutput en el ui.
+
+Ilustremos esto con un ejemplo a continuación:
+
+```{r}
+library(shiny)
+library(ggplot2)
+
+ui <- fluidPage(
+  
+  p("A continuación se muestre la tabla creada con renderDataTable y dataTableOutput"),
+  
+  dataTableOutput("tabla_dinamica"),
+  
+  p("A continuación se muestra el gráfico de barras que muestra la cantidad de autos
+    de acuerdo al número de cilindros en mtcars"),
+  
+  plotOutput("grafico")
+  
+)
+
+server <- function(input, output, session) {
+  
+  output$tabla_dinamica <- renderDataTable(
+    mtcars
+    )
+  
+  output$grafico <- renderPlot({
+    ggplot(data = mtcars) +
+      geom_bar(mapping = aes(x = cyl))
+  })
+  
+}
+
+# App
+shinyApp(ui = ui, server = server)
+```
+
+## Práctica
+
+Modifique la aplicación mostrada anteriormente para añadir un input de selección
+múltiple que permita a la persona seleccionar una de las variables discretas que 
+hay en mtcars, y ajuste el gráfico para mostrar el gráfico de barras para la variable
+elegida. 
+
+```{r}
+library(shiny)
+library(ggplot2)
+
+ui <- fluidPage(
+  
+  selectInput(inputId = "variable_discreta",
+              label = "Elija una de las siguientes variables discretas:",
+              choices = c("cyl", "gear", "carb")
+  ),
+  
+  plotOutput("grafico_cilindros")
+  
+)
+
+server <- function(input, output, session) {
+  
+  output$grafico_cilindros <- renderPlot(
+    ggplot(data = mtcars) +
+      geom_bar(mapping = aes_string(x = input$variable_discreta))
+  )
+  
+}
+
+# App
+shinyApp(ui = ui, server = server)
+```
+
+# shinydashboard
+
+Hasta ahora hemos estado usando la librería shiny para construir nuestras apps.
+Más adelante veremos todas las funcionalidades en cuanto a diseño que nos permite
+shiny, por ejemplo diferentes tipos de layouts (ya conocemos el sidebar y mainPanel 
+layout, pero hay otros).
+
+Una librería adicional que usamos mucho al desarrollar con shiny es llamada
+shinydashboard. 
+
+```{r}
+library(shiny)
+library(dplyr)
+library(shinydashboard)
+
+# UI
+ui <- dashboardPage(
+  
+  # Título de la app
+  dashboardHeader(title = "Visualizador de mtcars"),
+  
+  # Define el menú el Sidebar
+  dashboardSidebar(
+    
+    # Para crear el menú que está hecho de "tabs"
+    
+    sidebarMenu(
+      # Crea el tab de bienvenida
+      menuItem("Bienvenida", tabName = "bienvenida", icon = icon("table")),
+      
+      # Crea el tab que contendrá la tabla
+      menuItem("Tabla", tabName = "visualizador_tabla", icon = icon("table"))
+    )
+    
+  ),
+  
+  # Define el cuerpo de la app (lo que va dentro de cada tab)
+  dashboardBody(
+    
+    tabItems(
+      # Añade contenido para el tab de bienvenida
+      tabItem(tabName = "bienvenida",
+              
+              p("Hola!! Esta es la página de bienvenida!")
+      ),
+      # Añade contenido para el tab
+      tabItem(tabName = "visualizador_tabla",
+              
+              # Añade el widget que solicita la columna a mostrar 
+              selectInput("columna_seleccionada", 
+                          label = "Selecciona las columnas:", 
+                          choices = colnames(mtcars),
+                          multiple = TRUE
+                          ),
+              
+              # Añade la tabla renderizada
+              dataTableOutput("dataTable")
+      )
+    )
+  )
+)
+
+# Server
+server <- function(input, output) {
+  
+  #Renderiza la tabla con las columnas elegidas por la persona
+  output$dataTable <- renderDataTable({
+      mtcars |> 
+        select(input$columna_seleccionada)
+  })
+  
+}
+
+# App
+shinyApp(ui = ui, server = server)
+
+```
+
+Si quiere revisar opciones de icons, puede hacerlo [acá](https://fontawesome.com/icons) 
+
+### Práctica
+
+Añade a la app anterior, un nuevo tab llamado Gráfico. Dentro de ese tab, añada un 
+input que permita seleccionar una de las variables continuas de mtcars, y que muestre
+un histograma de la variable seleccionada.
+
+
+# shiny vs Tableu
+
+Tanto Shiny como Tableau son herramientas poderosas utilizadas para visualizar y 
+analizar datos, pero tienen diferentes enfoques, características y casos de uso. 
+
+## Shiny
+Enfoque: Shiny es un paquete de R que permite desarrollar aplicaciones web interactivas 
+para visualizar y analizar datos.
+
+### Casos de uso:
+
+- Creación de aplicaciones personalizadas para visualizar datos.
+- Integración con otros paquetes y funciones de R.
+- Análisis estadísticos complejos y modelos predictivos en tiempo real.
+
+Pros:
+
+- Personalización: Como es una herramienta de desarrollo, puedes crear visualizaciones
+y aplicaciones totalmente personalizadas.
+- Integración con R: Shiny se beneficia de la amplia gama de paquetes y capacidades de R.
+- Código abierto: No tiene coste y puedes adaptarlo según tus necesidades.
+
+
+### Tableau
+
+Enfoque: Tableau es una herramienta de visualización de datos y business intelligence 
+que permite crear visualizaciones interactivas y dashboards de forma rápida y fácil.
+
+### Casos de uso:
+
+- Creación rápida de dashboards y reportes para stakeholders.
+- Exploración visual de datos para obtener insights.
+- Publicación y compartir visualizaciones a través de Tableau Server o Tableau Public.
+
+Pros:
+
+- Interfaz amigable: Permite crear visualizaciones complejas sin programación.
+- Rápida iteración: Facilita la exploración visual de datos y la creación rápida 
+de dashboards.
+- Conectividad: Puede conectarse a una amplia variedad de fuentes de datos.
+- Escalabilidad: Tableau Server permite compartir dashboards con un gran número 
+de usuarios.
+
+Contras:
+
+- Coste: A diferencia de Shiny, Tableau no es gratuito (aunque tiene una versión 
+gratuita llamada Tableau Public).
+- Personalización limitada: Aunque es muy versátil, tiene límites en cuanto a 
+personalización y extensión.
+- Complejidad para análisis avanzados: Si bien se pueden realizar cálculos y análisis
+dentro de Tableau, para análisis estadísticos avanzados o modelos personalizados, 
+a menudo es necesario utilizar herramientas externas.
+
+Resumen:
+
+Shiny es ideal si necesitas un alto grado de personalización en la aplicación, si 
+también si necesitas interactuar con la persona usuaria por ejemplo para generar,
+exportar o escribir resultados por ejemplo a excel o a bases de datos.
+
+Tableau es excelente para la rápida creación de visualizaciones y dashboards, sin
+necesidad de utilizar habilidades de programación.
+
+Ambas herramientas tienen sus méritos y la elección entre ellas depende en gran 
+medida de necesidades, habilidades y preferencias.
